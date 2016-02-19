@@ -1,0 +1,2 @@
+class network_config {
+}
