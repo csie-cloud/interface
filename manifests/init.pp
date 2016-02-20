@@ -1,13 +1,19 @@
 class network_config(
   $subnets,
   $ip_ranges,
-  $interface_lists
+  $interface_lists,
+  $dnss
 )
 {
   $host_type = $hostname.match(/^[a-z]*/)[0]
   $ip = $ip_ranges[$host_type] + $hostname.match(/\d$/)[0]
   $interfaces = $interface_lists[$productname]
 
+  $ip_admin = "${subnets['admin']['prefix']}.${ip}"
+  $ip_manage = "${subnets['manage']['prefix']}.${ip}"
+  $ip_storage = "${subnets['storage']['prefix']}.${ip}"
+  $ip_external = "${subnets['external']['prefix']}.${ip}"
+  
   if( $interfaces == undef ){
     fail("productname: '${productname}' not in the interface manpping. Try to edit hiera data to fix it.")
   }
@@ -22,29 +28,29 @@ class network_config(
   
   network::if::static { $interfaces['admin']:
     ensure    => 'up',
-    dns1 => hiera('dns')[0],
+    dns1 => $dnss[0],
     peerdns => true,
     domain => $domain,
-    ipaddress => "${subnets['admin']['prefix']}.${ip}",
+    ipaddress => $ip_admin,
     netmask   => $subnets['admin']['mask']
   }
   
   network::if::static { $interfaces['external']:
     ensure => 'up',
-    ipaddress => "${subnets['external']['prefix']}.${ip}",
+    ipaddress => $ip_external,
     netmask   => $subnets['external']['mask'],
     gateway => $subnets['external']['gateway']
   }
 
   network::if::static { $interfaces['manage']:
     ensure => 'up',
-    ipaddress => "${subnets['manage']['prefix']}.${ip}",
+    ipaddress => $ip_manage,
     netmask   => $subnets['manage']['mask']
   }
 
   network::if::static { $interfaces['storage']:
     ensure => 'up',
-    ipaddress => "${subnets['storage']['prefix']}.${ip}",
+    ipaddress => $ip_storage,
     netmask   => $subnets['storage']['mask']
   }
 
